@@ -2,24 +2,15 @@ package il.ac.shenkar.demo;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 import org.pcap4j.core.PcapHandle;
 import org.pcap4j.core.PcapNetworkInterface;
-import org.pcap4j.core.Pcaps;
 import org.pcap4j.core.PcapNetworkInterface.PromiscuousMode;
+import org.pcap4j.core.Pcaps;
 import org.pcap4j.packet.EthernetPacket;
-import org.pcap4j.packet.IpV4Packet;
-import org.pcap4j.packet.IpV4Rfc791Tos;
-import org.pcap4j.packet.UdpPacket;
 import org.pcap4j.packet.UnknownPacket;
 import org.pcap4j.packet.namednumber.EtherType;
-import org.pcap4j.packet.namednumber.IpNumber;
-import org.pcap4j.packet.namednumber.IpVersion;
-import org.pcap4j.packet.namednumber.UdpPort;
 import org.pcap4j.util.MacAddress;
-
-import il.ac.shenkar.Protocol.MyProtocol;
 
 public class Demo4 {
 	public static void main(String[] args) throws Exception {

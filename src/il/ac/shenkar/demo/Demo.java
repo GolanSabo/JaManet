@@ -30,17 +30,19 @@ public class Demo {
 				if (packet == null) {
 					continue;
 				}
+				Header h = packet.getHeader();
+				System.out.println("HEADER " + h.toString());
 //				Header head = packet.getHeader();
-				Builder bb = new Builder();
-				bb.dstAddr(InetAddress.getByName("192.168.1.7"));
-				bb.srcAddr(addr);
-				bb.fin(true);
-				handle.sendPacket(bb.build());
+//				Builder bb = new Builder();
+//				bb.dstAddr(InetAddress.getByName("192.168.1.7"));
+//				bb.srcAddr(addr);
+//				bb.fin(true);
+//				handle.sendPacket(bb.build());
 //				Header head = IpV4Header
 //				handle.sendPacket(packet1);
 //				EthernetHeader ethHead = (EthernetHeader)head;
 //				EtherType t = ethHead.getType();
-				System.out.println(packet.toString());
+//				System.out.println(packet.toString());
 
 				//				org.pcap4j.packet.Packet.Builder
 				//				IpV4Packet ipV4Packet = packet.get(IpV4Packet.class);

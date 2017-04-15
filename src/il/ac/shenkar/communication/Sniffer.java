@@ -6,12 +6,12 @@ import org.pcap4j.core.NotOpenException;
 import org.pcap4j.core.PcapHandle;
 import org.pcap4j.core.PcapNativeException;
 import org.pcap4j.core.PcapNetworkInterface;
-import org.pcap4j.core.Pcaps;
 import org.pcap4j.core.PcapNetworkInterface.PromiscuousMode;
+import org.pcap4j.core.Pcaps;
 import org.pcap4j.packet.Packet;
 
-import il.ac.shenkar.Controller.Controller;
 import il.ac.shenkar.system.Dispatcher;
+import il.ac.shenkar.system.Parser;
 import il.ac.shenkar.system.QueueObject;
 
 /**
@@ -93,7 +93,7 @@ public class Sniffer {
 
 		@Override
 		public void dispatch() {
-			Controller.getInstance().receiveEvent(packet);
+			Parser.getInstance().receiveEvent(packet);
 		}
 	}
 }
