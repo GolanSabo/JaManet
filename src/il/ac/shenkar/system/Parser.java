@@ -8,6 +8,7 @@ import org.pcap4j.packet.Packet;
 import org.pcap4j.packet.TcpPacket;
 import org.pcap4j.packet.UdpPacket;
 
+import il.ac.shenkar.Controller.Controller;
 import il.ac.shenkar.message.Message.ClientConfAckStruct;
 import il.ac.shenkar.message.Message.ConfMsgStruct;
 import il.ac.shenkar.message.Message.ElectionMsgStruct;
@@ -27,9 +28,9 @@ import il.ac.shenkar.message.ParserCommandInterface;
 public class Parser implements ParserCommandInterface{
 	
 	private static Parser instance;
-	
+	private Dispatcher dispatcher;
 	private Parser(){
-		
+		dispatcher = Dispatcher.getInstance();
 	}
 	
 	public static Parser getInstance(){
@@ -43,16 +44,16 @@ public class Parser implements ParserCommandInterface{
 		if(etherPacket == null)
 			return;
 		EthernetHeader header = etherPacket.getHeader();
-
+		
 		switch(header.getType().value()){
 		case NetworkDiscoveryMsgStruct.MSG_TYPE:
-			parseNetworkDiscoveryMsg(packet.getRawData());
+			parseNetworkDiscoveryMsg(packet.getRawData(), header);
 			break;
 		case ConfMsgStruct.MSG_TYPE:
-			parseConfMsg(packet.getRawData());
+			parseConfMsg(packet.getRawData(), header);
 			break;
 		case ClientConfAckStruct.MSG_TYPE:
-			parseClientConfAckMsg(packet.getRawData());
+			parseClientConfAckMsg(packet.getRawData(), header);
 			break;
 		case ServerConfAckStruct.MSG_TYPE:
 			// no data inside
@@ -88,7 +89,6 @@ public class Parser implements ParserCommandInterface{
 			parseElectionMsg(packet.getRawData());
 			break;
 		default:
-//			TcpPacket tcpPacket = packet.get(TcpPacket.class);
 			TcpPacket tcpPacket;
 			UdpPacket udpPacket;
 			if((tcpPacket = packet.get(TcpPacket.class)) != null){
@@ -99,17 +99,33 @@ public class Parser implements ParserCommandInterface{
 		}
 	}
 
-	private void parseNetworkDiscoveryMsg(byte[] rawData) {
+	private void parseNetworkDiscoveryMsg(byte[] rawData, EthernetHeader header) {
 		NetworkDiscoveryMsgParams params = new NetworkDiscoveryMsgParams();
 		NetworkDiscoveryMsgStruct struct = new NetworkDiscoveryMsgStruct();
 		
 		struct.setByteBuffer(ByteBuffer.wrap(rawData),0);
-		params.srcMac = struct.srcMac.get();
-		params.srcName = struct.srcName.get();
+		
 		params.ssId = struct.ssId.get();
+		params.dstMac = header.getDstAddr().toString();
+		params.srcMac =  header.getSrcAddr().toString();
+		
+		dispatcher.insert(new NetworkDiscoveryQueueObj(params));
 	}
 	
-	private void parseConfMsg(byte[] rawData) {
+	protected class NetworkDiscoveryQueueObj implements QueueObject{
+		private NetworkDiscoveryMsgParams param;
+		
+		public NetworkDiscoveryQueueObj(NetworkDiscoveryMsgParams params){
+			param = params;
+		}
+		
+		@Override
+		public void dispatch() {
+			Controller.getInstance().receivedNetworkDiscoveryEvent(param);
+		}
+	}
+	
+	private void parseConfMsg(byte[] rawData, EthernetHeader header) {
 		ConfMsgParams params = new ConfMsgParams();
 		ConfMsgStruct struct = new ConfMsgStruct();
 
@@ -120,14 +136,51 @@ public class Parser implements ParserCommandInterface{
 		params.poolSize = (byte)struct.poolSize.get();
 		params.routingProtocol = (byte)struct.routingProtocol.get();
 		params.wifiMode = (byte)struct.wifiMode.get();
+		
+		params.dstMac = header.getDstAddr().toString();
+		params.srcMac =  header.getSrcAddr().toString();
+		
+		dispatcher.insert(new ConfMsgQueueObj(params));
 	}
 	
-	private void parseClientConfAckMsg(byte[] rawData) {
+	protected class ConfMsgQueueObj implements QueueObject{
+		private ConfMsgParams param;
+		
+		public ConfMsgQueueObj(ConfMsgParams params){
+			param = params;
+		}
+		
+		@Override
+		public void dispatch() {
+			Controller.getInstance().receivedConfMsgEvent(param);
+		}
+	}
+	
+	private void parseClientConfAckMsg(byte[] rawData, EthernetHeader header) {
 		ClientConfAckParams params = new ClientConfAckParams();
 		ClientConfAckStruct struct = new ClientConfAckStruct();
 		
 		struct.setByteBuffer(ByteBuffer.wrap(rawData),0);
 		params.ip = struct.ip.get();
+		params.srcName = struct.srcName.get();
+		
+		params.dstMac = header.getDstAddr().toString();
+		params.srcMac =  header.getSrcAddr().toString();
+		
+		dispatcher.insert(new ClientConfAckQueueObj(params));
+	}
+	
+	protected class ClientConfAckQueueObj implements QueueObject{
+		private ClientConfAckParams param;
+		
+		public ClientConfAckQueueObj(ClientConfAckParams params){
+			param = params;
+		}
+		
+		@Override
+		public void dispatch() {
+			Controller.getInstance().receivedClientConfAckParamsEvent(param);
+		}
 	}
 	
 	private void parseNewJoineeMsg(byte[] rawData) {
@@ -137,7 +190,7 @@ public class Parser implements ParserCommandInterface{
 		struct.setByteBuffer(ByteBuffer.wrap(rawData),0);
 		params.ip = struct.ip.get();
 		params.newJoineeIp = struct.newJoineeIp.get();
-		params.newJoineePoolSize = (byte) struct.newJoineePoolSize.get();
+//		params.newJoineePoolSize = (byte) struct.newJoineePoolSize.get();
 		params.seqNum = (short) struct.seqNum.get();
 		params.poolSize = (byte) struct.poolSize.get();
 	}

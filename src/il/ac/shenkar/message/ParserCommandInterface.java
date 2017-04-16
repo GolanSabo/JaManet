@@ -3,12 +3,14 @@ package il.ac.shenkar.message;
 public interface ParserCommandInterface {
 	
 	public class NetworkDiscoveryMsgParams{
+		public String dstMac;
 		public String srcMac;
 		public String ssId;
-		public String srcName;
 	}
 	
 	public class ConfMsgParams{
+		public String dstMac;
+		public String srcMac;
 		public byte wifiMode;
 		public byte channel;
 		public byte routingProtocol;
@@ -18,7 +20,10 @@ public interface ParserCommandInterface {
 	}
 	
 	public class ClientConfAckParams{
+		public String dstMac;
+		public String srcMac;
 		public String ip;
+		public String srcName;
 	}
 	
 	public class NewJoineeMsgParams{
@@ -26,7 +31,7 @@ public interface ParserCommandInterface {
 		public String ip;	
 		public byte poolSize;	
 		public String newJoineeIp;	
-		public byte newJoineePoolSize;
+//		public byte newJoineePoolSize;
 	}
 	
 	public class IpPoolMsgParams{
@@ -84,5 +89,6 @@ public interface ParserCommandInterface {
 		public byte electionNum;
 		public String ip;
 	}
+	
 	
 }

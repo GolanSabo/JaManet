@@ -1,17 +1,29 @@
 package il.ac.shenkar.message;
 
+import javolution.io.Struct;
+
 public class Message {
 
 	private static final int MAC_ADDR_LEN = 17;
 	private static final int NAME_LENGTH = 16;
 	private static final int IP_SIZE = 15;
 	
+	public static class MessageHeader extends Struct{
+		public UTF8String srcMac = new UTF8String(MAC_ADDR_LEN);
+		public UTF8String dstMac = new UTF8String(MAC_ADDR_LEN);
+		public Struct struct = null;
+		
+		public MessageHeader(Struct struct){
+			this.struct = struct;
+		}
+	}
+	
 	public static class NetworkDiscoveryMsgStruct extends javolution.io.Struct{
 		public static final short MSG_TYPE = 0x0010;
 		
 		public UTF8String srcMac = new UTF8String(MAC_ADDR_LEN);
 		public UTF8String ssId = new UTF8String(NAME_LENGTH);
-		public UTF8String srcName = new UTF8String(NAME_LENGTH);
+
 	}
 	
 	public static class ConfMsgStruct extends javolution.io.Struct{
@@ -29,6 +41,7 @@ public class Message {
 		public static final short MSG_TYPE = 0x0012;
 		
 		public UTF8String ip = new UTF8String(IP_SIZE);	
+		public UTF8String srcName = new UTF8String(NAME_LENGTH);
 	}
 	
 	public static class ServerConfAckStruct extends javolution.io.Struct{
@@ -42,8 +55,7 @@ public class Message {
 		public UTF8String ip = new UTF8String(IP_SIZE);	
 		public Unsigned8 poolSize = new Unsigned8(1);	
 		public UTF8String newJoineeIp = new UTF8String(IP_SIZE);	
-		public Unsigned8 newJoineePoolSize = new Unsigned8(1);
-		
+//		public Unsigned8 newJoineePoolSize = new Unsigned8(1);		
 	}
 	
 	public static class IpPoolMsgStruct extends javolution.io.Struct{
@@ -141,5 +153,37 @@ public class Message {
 		public Unsigned8 electionNum = new Unsigned8(1);
 		public UTF8String ip = new UTF8String(IP_SIZE);
 	}
+	
+//	public static class aodvRouteRequestStruct extends javolution.io.Struct{
+//		public static final short MSG_TYPE = 0x0041;
+//		
+//		public Unsigned8  hopCount = new Unsigned8(1);
+//		public Unsigned16 rreqId = new Unsigned16(2);
+//		public UTF8String destIp = new UTF8String(IP_SIZE);
+//		public Unsigned16 destSeqNum = new Unsigned16(1);
+//		public UTF8String srcIp = new UTF8String(IP_SIZE);
+//		public Unsigned16 srcSeqNum = new Unsigned16(1);
+//	}
+//
+//	public static class aodvRouteResponseStruct extends javolution.io.Struct{
+//		public static final short MSG_TYPE = 0x0042;
+//		
+//		public Unsigned8  hopCount = new Unsigned8(1);
+//		public UTF8String destIp = new UTF8String(IP_SIZE);
+//		public Unsigned16 destSeqNum = new Unsigned16(1);
+//		public UTF8String srcIp = new UTF8String(IP_SIZE);
+//		public Unsigned16 lifeTime = new Unsigned16(1);
+//	}
+//
+//	public static class aodvRouteErrorStruct extends javolution.io.Struct{
+//		public static final short MSG_TYPE = 0x0043;
+//		
+//		public UTF8String destIp = new UTF8String(IP_SIZE);
+//		public Unsigned16 destSeqNum = new Unsigned16(1);
+//	}
+//	
+//	public static class aodvRouteReplyAckStruct extends javolution.io.Struct{
+//		public static final short MSG_TYPE = 0x0044;
+//	}
 	
 }

@@ -19,6 +19,7 @@ public class Dispatcher {
      */
     private Dispatcher() {
         queue       = new LinkedBlockingQueue<QueueObject>();
+        sniffer 	= Sniffer.getInstance();
         thread      = new Thread( new Runnable() {
             @Override
             public void run() {
@@ -42,7 +43,9 @@ public class Dispatcher {
      * Starts the module and the underlying modules
      */
     public void start() {
+    	thread.start();
     	sniffer.start();
+    	
     	
     }
 

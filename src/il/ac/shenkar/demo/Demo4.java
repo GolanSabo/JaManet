@@ -47,7 +47,7 @@ public class Demo4 {
 
 //			System.out.println("IPV4 PACKET " + ipv4b.build());
 			EthernetPacket.Builder eb = new EthernetPacket.Builder();
-			EtherType type = new EtherType((short) 0x1111, "OLSR");
+			EtherType type = new EtherType((short) 0x0010, "OLSR");
 			EtherType.register(type);
 			eb.type(type)
 			.srcAddr(MacAddress.getByName("08:00:27:21:d4:ae", ":"))

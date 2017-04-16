@@ -1,6 +1,7 @@
 package il.ac.shenkar.communication;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import org.pcap4j.core.NotOpenException;
 import org.pcap4j.core.PcapHandle;
@@ -37,11 +38,18 @@ public class Sniffer {
 	private final int snapLen = 65536;
 
 	// The packet handler (send, receive etc...)
-	private PcapHandle handle;
+	private PcapHandle handleInput;
+	private PcapHandle handleOuput;
 
 	//private constructor
 	private Sniffer(){
-		//TODO: get date from conf file
+		//TODO: get data from conf file
+		try {
+			addr = InetAddress.getByName("192.168.1.4");
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -72,15 +80,19 @@ public class Sniffer {
 	 * @throws NotOpenException - if this PcapHandle is not open.
 	 */
 	private void sniff() throws PcapNativeException, NotOpenException{
-		handle = nif.openLive(snapLen, mode, 0);
+		handleInput = nif.openLive(snapLen, mode, 0);
 		while(true){
-			Packet packet = handle.getNextPacket();
+			Packet packet = handleInput.getNextPacket();
 			if (packet == null) {
 				continue;
 			}
 			Dispatcher.getInstance().insert(new PacketQueueObject(packet));
 		}
 
+	}
+	
+	public void send(Packet packet) throws PcapNativeException, NotOpenException{
+		handleOuput.sendPacket(packet);
 	}
 
 
