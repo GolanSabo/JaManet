@@ -8,7 +8,6 @@ import org.pcap4j.packet.Packet;
 import org.pcap4j.packet.TcpPacket;
 import org.pcap4j.packet.UdpPacket;
 
-import il.ac.shenkar.Controller.Controller;
 import il.ac.shenkar.message.Message.ClientConfAckStruct;
 import il.ac.shenkar.message.Message.ConfMsgStruct;
 import il.ac.shenkar.message.Message.ElectionMsgStruct;
@@ -23,6 +22,7 @@ import il.ac.shenkar.message.Message.NewJoineeMsgStruct;
 import il.ac.shenkar.message.Message.ServerConfAckStruct;
 import il.ac.shenkar.message.Message.StatRequestMsgStruct;
 import il.ac.shenkar.message.Message.StatResponeMsgStruct;
+import il.ac.shenkar.controller.Controller;
 import il.ac.shenkar.message.ParserCommandInterface;
 
 public class Parser implements ParserCommandInterface{
@@ -59,7 +59,7 @@ public class Parser implements ParserCommandInterface{
 			// no data inside
 			break;
 		case NewJoineeMsgStruct.MSG_TYPE:
-			parseNewJoineeMsg(packet.getRawData());
+			parseNewJoineeMsg(packet.getRawData(), header);
 			break;
 		case IpPoolMsgStruct.MSG_TYPE:
 			parseIpPoolMsg(packet.getRawData());
@@ -83,7 +83,7 @@ public class Parser implements ParserCommandInterface{
 			parseStatResponseMsg(packet.getRawData());
 			break;
 		case MonitorMsgStruct.MSG_TYPE:
-			parseMonitorMsg(packet.getRawData());
+			parseMonitorMsg(packet.getRawData(), header);
 			break;
 		case ElectionMsgStruct.MSG_TYPE:
 			parseElectionMsg(packet.getRawData());
@@ -183,7 +183,7 @@ public class Parser implements ParserCommandInterface{
 		}
 	}
 	
-	private void parseNewJoineeMsg(byte[] rawData) {
+	private void parseNewJoineeMsg(byte[] rawData, EthernetHeader header) {
 		NewJoineeMsgParams params = new NewJoineeMsgParams();
 		NewJoineeMsgStruct struct = new NewJoineeMsgStruct();
 		
@@ -193,11 +193,29 @@ public class Parser implements ParserCommandInterface{
 //		params.newJoineePoolSize = (byte) struct.newJoineePoolSize.get();
 		params.seqNum = (short) struct.seqNum.get();
 		params.poolSize = (byte) struct.poolSize.get();
+		
+		params.dstMac = header.getDstAddr().toString();
+		params.srcMac =  header.getSrcAddr().toString();
+		
+		dispatcher.insert(new NewJoineeQueueObj(params));
+	}
+	
+	protected class NewJoineeQueueObj implements QueueObject{
+		private NewJoineeMsgParams param;
+		
+		public NewJoineeQueueObj(NewJoineeMsgParams params){
+			param = params;
+		}
+		
+		@Override
+		public void dispatch() {
+			Controller.getInstance().receivedNewJoineeMsgEvent(param);
+		}
 	}
 	
 	private void parseIpPoolMsg(byte[] rawData) {
 		if(rawData.length < IpPoolMsgStruct.headerSize){
-			//the msg is not in the requeired size
+			//the msg is not in the required size
 			return;
 		}
 		
@@ -211,6 +229,8 @@ public class Parser implements ParserCommandInterface{
 		for(int i = 0; i < struct.poolTable.length; ++i){
 			params.poolTable[i] = struct.poolTable[i].get();
 		}
+		
+
 	}
 	
 	private void parseIpLeakMsg(byte[] rawData) {
@@ -258,7 +278,7 @@ public class Parser implements ParserCommandInterface{
 	private void parseStatRequestMsg(byte[] rawData) {
 		
 		if(rawData.length < StatRequestMsgStruct.headerSize){
-			//the msg is not in the requeired size
+			//the msg is not in the required size
 			return;
 		}
 		
@@ -289,7 +309,7 @@ public class Parser implements ParserCommandInterface{
 		params.totalMsgSent = (short) struct.totalMsgSent.get();
 	}
 	
-	private void parseMonitorMsg(byte[] rawData) {
+	private void parseMonitorMsg(byte[] rawData, EthernetHeader header) {
 		MonitorMsgParams params = new MonitorMsgParams();
 		MonitorMsgStruct struct = new MonitorMsgStruct();
 		
@@ -300,8 +320,25 @@ public class Parser implements ParserCommandInterface{
 		params.second = (byte) struct.second.get();
 		params.routingProtocol = (byte) struct.routingProtocol.get();
 		params.seqNum = (short) struct.seqNum.get();
+		
+		params.dstMac = header.getDstAddr().toString();
+		params.srcMac =  header.getSrcAddr().toString();
+		
+		dispatcher.insert(new MonitorMsgQueueObj(params));
 	}
 	
+	protected class MonitorMsgQueueObj implements QueueObject{
+		private MonitorMsgParams param;
+		
+		public MonitorMsgQueueObj(MonitorMsgParams params){
+			param = params;
+		}
+		
+		@Override
+		public void dispatch() {
+			Controller.getInstance().receivedMonitorMsgEvent(param);
+		}
+	}
 	private void parseElectionMsg(byte[] rawData) {
 		ElectionMsgParams params = new ElectionMsgParams();
 		ElectionMsgStruct struct = new ElectionMsgStruct();

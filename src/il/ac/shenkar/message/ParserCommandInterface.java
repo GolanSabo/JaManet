@@ -27,6 +27,8 @@ public interface ParserCommandInterface {
 	}
 	
 	public class NewJoineeMsgParams{
+		public String dstMac;
+		public String srcMac;
 		public short seqNum;
 		public String ip;	
 		public byte poolSize;	
@@ -35,6 +37,8 @@ public interface ParserCommandInterface {
 	}
 	
 	public class IpPoolMsgParams{
+		public String dstMac;
+		public String srcMac;
 		public short seqNum;
 		public String[] poolTable;
 	}
@@ -77,6 +81,8 @@ public interface ParserCommandInterface {
 	}
 	
 	public static class MonitorMsgParams{
+		public String dstMac;
+		public String srcMac;
 		public short seqNum;
 		public byte routingProtocol;
 		public byte hour;

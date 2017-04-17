@@ -1,4 +1,4 @@
-package il.ac.shenkar.Controller;
+package il.ac.shenkar.controller;
 
 import il.ac.shenkar.data.DNSTable;
 import il.ac.shenkar.data.IpTuple;
@@ -9,10 +9,12 @@ import il.ac.shenkar.message.Message.NewJoineeMsgStruct;
 import il.ac.shenkar.message.Message.ServerConfAckStruct;
 import il.ac.shenkar.message.ParserCommandInterface.ClientConfAckParams;
 import il.ac.shenkar.message.ParserCommandInterface.ConfMsgParams;
+import il.ac.shenkar.message.ParserCommandInterface.MonitorMsgParams;
 import il.ac.shenkar.message.ParserCommandInterface.NetworkDiscoveryMsgParams;
+import il.ac.shenkar.message.ParserCommandInterface.NewJoineeMsgParams;
 import il.ac.shenkar.routing.RoutingProtocolEnum;
 import il.ac.shenkar.system.Assembler;
-import il.ac.shenkar.system.Manager.IpManager;
+import il.ac.shenkar.system.managers.IpManager;
 
 /**
  * This module is the main module of the application. it is in charge of sniffing any packet in the network.
@@ -100,7 +102,7 @@ public class Controller {
 
 	public void receivedClientConfAckParamsEvent(ClientConfAckParams param) {
 		dnsTable.put(param.ip, param.srcName);
-		ipManager.updateMyPool(param.ip);
+		ipManager.updateMyPoolForAllocation(param.ip);
 		
 		ServerConfAckStruct struct = new ServerConfAckStruct();
 		MessageHeader header = new MessageHeader(struct);
@@ -119,6 +121,36 @@ public class Controller {
 		
 		Assembler.getInstance().assemble(struct1.MSG_TYPE, header);
 	}
-	
-	
+
+	public void receivedNewJoineeMsgEvent(NewJoineeMsgParams param) {
+		//TODO: check sequence number
+		
+		ipManager.updateOrAddTuple(param.ip, param.poolSize);
+		ipManager.updateOrAddTuple(param.newJoineeIp, param.poolSize);
+		
+		NewJoineeMsgStruct struct = new NewJoineeMsgStruct();
+		struct.ip.set(param.ip);
+		struct.newJoineeIp.set(param.ip);
+		struct.poolSize.set(param.poolSize);
+		
+		//TODO: give real number to sequence number
+		struct.seqNum.set(++param.seqNum);
+		
+		MessageHeader header = new MessageHeader(struct);
+		header.dstMac.set(param.srcMac);
+		header.srcMac.set(myMac);
+		
+		Assembler.getInstance().assemble(struct.MSG_TYPE, header);
+	}
+
+	public void receivedMonitorMsgEvent(MonitorMsgParams param) {
+		
+		if(param.routingProtocol != protocol.ordinal()){
+			//TODO : switch routing protocol
+		}
+		
+			
+		
+	}
+
 }
