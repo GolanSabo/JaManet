@@ -2,9 +2,11 @@ package il.ac.shenkar.system.managers;
 
 import il.ac.shenkar.data.IpAllocationTable;
 import il.ac.shenkar.data.IpTuple;
+import il.ac.shenkar.system.scheduler.ScheduleInterface;
 import il.ac.shenkar.utils.IpUtils;
+import il.ac.shenkar.utils.Utils;
 
-public class IpManager {
+public class IpManager implements ScheduleInterface{
 	//Private variables
 	private static IpManager instance = null;
 	private IpAllocationTable ipTable = null;
@@ -43,13 +45,13 @@ public class IpManager {
 		ipTable = IpAllocationTable.getInstance();
 	}
 
-	public IpAllocationTable getIpTable() {
-		return ipTable;
-	}
-
-	public void setIpTable(IpAllocationTable ipTable) {
-		this.ipTable = ipTable;
-	}
+//	public IpAllocationTable getIpTable() {
+//		return ipTable;
+//	}
+//
+//	public void setIpTable(IpAllocationTable ipTable) {
+//		this.ipTable = ipTable;
+//	}
 
 	public int getPoolSize() {
 		return poolSize;
@@ -101,6 +103,16 @@ public class IpManager {
 	public void updateOrAddTuple(String ip, short poolSize){
 		IpTuple ipTuple = new IpTuple(ip, poolSize);
 		ipTable.put(ip, ipTuple);
+	}
+	
+	
+	@Override
+	public void timerEvent(Object id) {
+		IpTuple leakedTuple = (IpTuple) id;
+		
+		ipTable = (IpAllocationTable) Utils.sortByValue(ipTable);
+		//TODO: get the buddy by sorting the map
+		
 	}
 	
 	
