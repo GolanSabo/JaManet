@@ -25,27 +25,28 @@ import il.ac.shenkar.message.Message.StatResponeMsgStruct;
 import il.ac.shenkar.controller.Controller;
 import il.ac.shenkar.message.ParserCommandInterface;
 
-public class Parser implements ParserCommandInterface{
-	
+public class Parser implements ParserCommandInterface {
+
 	private static Parser instance;
 	private Dispatcher dispatcher;
-	private Parser(){
+
+	private Parser() {
 		dispatcher = Dispatcher.getInstance();
 	}
-	
-	public static Parser getInstance(){
-		if(instance == null)
+
+	public static Parser getInstance() {
+		if (instance == null)
 			instance = new Parser();
 		return instance;
 	}
-	
-	public void receiveEvent(Packet packet){
+
+	public void receiveEvent(Packet packet) {
 		EthernetPacket etherPacket = packet.get(EthernetPacket.class);
-		if(etherPacket == null)
+		if (etherPacket == null)
 			return;
 		EthernetHeader header = etherPacket.getHeader();
-		
-		switch(header.getType().value()){
+
+		switch (header.getType().value()) {
 		case NetworkDiscoveryMsgStruct.MSG_TYPE:
 			parseNetworkDiscoveryMsg(packet.getRawData(), header);
 			break;
@@ -77,10 +78,10 @@ public class Parser implements ParserCommandInterface{
 			parseIpPoolAck(packet.getRawData());
 			break;
 		case StatRequestMsgStruct.MSG_TYPE:
-			parseStatRequestMsg(packet.getRawData());
+			parseStatRequestMsg(packet.getRawData(), header);
 			break;
 		case StatResponeMsgStruct.MSG_TYPE:
-			parseStatResponseMsg(packet.getRawData());
+			parseStatResponseMsg(packet.getRawData(), header);
 			break;
 		case MonitorMsgStruct.MSG_TYPE:
 			parseMonitorMsg(packet.getRawData(), header);
@@ -91,10 +92,10 @@ public class Parser implements ParserCommandInterface{
 		default:
 			TcpPacket tcpPacket;
 			UdpPacket udpPacket;
-			if((tcpPacket = packet.get(TcpPacket.class)) != null){
-				
-			}else if((udpPacket = packet.get(UdpPacket.class)) != null){
-				
+			if ((tcpPacket = packet.get(TcpPacket.class)) != null) {
+
+			} else if ((udpPacket = packet.get(UdpPacket.class)) != null) {
+
 			}
 		}
 	}
@@ -102,154 +103,153 @@ public class Parser implements ParserCommandInterface{
 	private void parseNetworkDiscoveryMsg(byte[] rawData, EthernetHeader header) {
 		NetworkDiscoveryMsgParams params = new NetworkDiscoveryMsgParams();
 		NetworkDiscoveryMsgStruct struct = new NetworkDiscoveryMsgStruct();
-		
-		struct.setByteBuffer(ByteBuffer.wrap(rawData),0);
-		
+
+		struct.setByteBuffer(ByteBuffer.wrap(rawData), 0);
+
 		params.ssId = struct.ssId.get();
 		params.dstMac = header.getDstAddr().toString();
-		params.srcMac =  header.getSrcAddr().toString();
-		
+		params.srcMac = header.getSrcAddr().toString();
+
 		dispatcher.insert(new NetworkDiscoveryQueueObj(params));
 	}
-	
-	protected class NetworkDiscoveryQueueObj implements QueueObject{
+
+	protected class NetworkDiscoveryQueueObj implements QueueObject {
 		private NetworkDiscoveryMsgParams param;
-		
-		public NetworkDiscoveryQueueObj(NetworkDiscoveryMsgParams params){
+
+		public NetworkDiscoveryQueueObj(NetworkDiscoveryMsgParams params) {
 			param = params;
 		}
-		
+
 		@Override
 		public void dispatch() {
 			Controller.getInstance().receivedNetworkDiscoveryEvent(param);
 		}
 	}
-	
+
 	private void parseConfMsg(byte[] rawData, EthernetHeader header) {
 		ConfMsgParams params = new ConfMsgParams();
 		ConfMsgStruct struct = new ConfMsgStruct();
 
-		struct.setByteBuffer(ByteBuffer.wrap(rawData),0);
+		struct.setByteBuffer(ByteBuffer.wrap(rawData), 0);
 		params.channel = (byte) struct.channel.get();
 		params.ip = struct.ip.get();
 		params.netmask = struct.netmask.get();
-		params.poolSize = (byte)struct.poolSize.get();
-		params.routingProtocol = (byte)struct.routingProtocol.get();
-		params.wifiMode = (byte)struct.wifiMode.get();
-		
+		params.poolSize = (byte) struct.poolSize.get();
+		params.routingProtocol = (byte) struct.routingProtocol.get();
+		params.wifiMode = (byte) struct.wifiMode.get();
+
 		params.dstMac = header.getDstAddr().toString();
-		params.srcMac =  header.getSrcAddr().toString();
-		
+		params.srcMac = header.getSrcAddr().toString();
+
 		dispatcher.insert(new ConfMsgQueueObj(params));
 	}
-	
-	protected class ConfMsgQueueObj implements QueueObject{
+
+	protected class ConfMsgQueueObj implements QueueObject {
 		private ConfMsgParams param;
-		
-		public ConfMsgQueueObj(ConfMsgParams params){
+
+		public ConfMsgQueueObj(ConfMsgParams params) {
 			param = params;
 		}
-		
+
 		@Override
 		public void dispatch() {
 			Controller.getInstance().receivedConfMsgEvent(param);
 		}
 	}
-	
+
 	private void parseClientConfAckMsg(byte[] rawData, EthernetHeader header) {
 		ClientConfAckParams params = new ClientConfAckParams();
 		ClientConfAckStruct struct = new ClientConfAckStruct();
-		
-		struct.setByteBuffer(ByteBuffer.wrap(rawData),0);
+
+		struct.setByteBuffer(ByteBuffer.wrap(rawData), 0);
 		params.ip = struct.ip.get();
 		params.srcName = struct.srcName.get();
-		
+
 		params.dstMac = header.getDstAddr().toString();
-		params.srcMac =  header.getSrcAddr().toString();
-		
+		params.srcMac = header.getSrcAddr().toString();
+
 		dispatcher.insert(new ClientConfAckQueueObj(params));
 	}
-	
-	protected class ClientConfAckQueueObj implements QueueObject{
+
+	protected class ClientConfAckQueueObj implements QueueObject {
 		private ClientConfAckParams param;
-		
-		public ClientConfAckQueueObj(ClientConfAckParams params){
+
+		public ClientConfAckQueueObj(ClientConfAckParams params) {
 			param = params;
 		}
-		
+
 		@Override
 		public void dispatch() {
 			Controller.getInstance().receivedClientConfAckParamsEvent(param);
 		}
 	}
-	
+
 	private void parseNewJoineeMsg(byte[] rawData, EthernetHeader header) {
 		NewJoineeMsgParams params = new NewJoineeMsgParams();
 		NewJoineeMsgStruct struct = new NewJoineeMsgStruct();
-		
-		struct.setByteBuffer(ByteBuffer.wrap(rawData),0);
+
+		struct.setByteBuffer(ByteBuffer.wrap(rawData), 0);
 		params.ip = struct.ip.get();
 		params.newJoineeIp = struct.newJoineeIp.get();
-//		params.newJoineePoolSize = (byte) struct.newJoineePoolSize.get();
+		// params.newJoineePoolSize = (byte) struct.newJoineePoolSize.get();
 		params.seqNum = (short) struct.seqNum.get();
 		params.poolSize = (byte) struct.poolSize.get();
-		
+
 		params.dstMac = header.getDstAddr().toString();
-		params.srcMac =  header.getSrcAddr().toString();
-		
+		params.srcMac = header.getSrcAddr().toString();
+
 		dispatcher.insert(new NewJoineeQueueObj(params));
 	}
-	
-	protected class NewJoineeQueueObj implements QueueObject{
+
+	protected class NewJoineeQueueObj implements QueueObject {
 		private NewJoineeMsgParams param;
-		
-		public NewJoineeQueueObj(NewJoineeMsgParams params){
+
+		public NewJoineeQueueObj(NewJoineeMsgParams params) {
 			param = params;
 		}
-		
+
 		@Override
 		public void dispatch() {
 			Controller.getInstance().receivedNewJoineeMsgEvent(param);
 		}
 	}
-	
+
 	private void parseIpPoolMsg(byte[] rawData) {
-		if(rawData.length < IpPoolMsgStruct.headerSize){
-			//the msg is not in the required size
+		if (rawData.length < IpPoolMsgStruct.headerSize) {
+			// the msg is not in the required size
 			return;
 		}
-		
+
 		IpPoolMsgParams params = new IpPoolMsgParams();
 		IpPoolMsgStruct struct = new IpPoolMsgStruct(rawData.length - IpPoolMsgStruct.headerSize);
-		
-		struct.setByteBuffer(ByteBuffer.wrap(rawData),0);
+
+		struct.setByteBuffer(ByteBuffer.wrap(rawData), 0);
 		params.seqNum = (short) struct.seqNum.get();
 		params.poolTable = new String[struct.poolTable.length];
-	
-		for(int i = 0; i < struct.poolTable.length; ++i){
+
+		for (int i = 0; i < struct.poolTable.length; ++i) {
 			params.poolTable[i] = struct.poolTable[i].get();
 		}
-		
 
 	}
-	
+
 	private void parseIpLeakMsg(byte[] rawData) {
 		IpLeakMsgParams params = new IpLeakMsgParams();
 		IpLeakMsgStruct struct = new IpLeakMsgStruct();
-		
-		struct.setByteBuffer(ByteBuffer.wrap(rawData),0);
-		
+
+		struct.setByteBuffer(ByteBuffer.wrap(rawData), 0);
+
 		params.firstIp = struct.firstIp.get();
 		params.poolSize = (byte) struct.poolSize.get();
 		params.seqNum = (short) struct.seqNum.get();
 	}
-	
+
 	private void parseIpPoolRequestMsg(byte[] rawData) {
 		IpPoolRequestMsgParams params = new IpPoolRequestMsgParams();
 		IpPoolRequestMsgStruct struct = new IpPoolRequestMsgStruct();
-		
-		struct.setByteBuffer(ByteBuffer.wrap(rawData),0);
-		
+
+		struct.setByteBuffer(ByteBuffer.wrap(rawData), 0);
+
 		params.ip = struct.ip.get();
 		params.seqNum = (short) struct.seqNum.get();
 	}
@@ -257,97 +257,130 @@ public class Parser implements ParserCommandInterface{
 	private void parseIpPoolResponseMsg(byte[] rawData) {
 		IpPoolResponseMsgParams params = new IpPoolResponseMsgParams();
 		IpPoolResponseMsgStruct struct = new IpPoolResponseMsgStruct();
-		
-		struct.setByteBuffer(ByteBuffer.wrap(rawData),0);
-		
+
+		struct.setByteBuffer(ByteBuffer.wrap(rawData), 0);
+
 		params.destIp = struct.destIp.get();
 		params.firstIp = struct.firstIp.get();
 		params.poolSize = (byte) struct.poolSize.get();
 	}
-	
+
 	private void parseIpPoolAck(byte[] rawData) {
 		IpPoolAckParams params = new IpPoolAckParams();
 		IpPoolAckStruct struct = new IpPoolAckStruct();
-		
-		struct.setByteBuffer(ByteBuffer.wrap(rawData),0);
-		
+
+		struct.setByteBuffer(ByteBuffer.wrap(rawData), 0);
+
 		params.firstIp = struct.firstIp.get();
 		params.poolSize = (byte) struct.poolSize.get();
 	}
-	
-	private void parseStatRequestMsg(byte[] rawData) {
-		
-		if(rawData.length < StatRequestMsgStruct.headerSize){
-			//the msg is not in the required size
+
+	private void parseStatRequestMsg(byte[] rawData, EthernetHeader header) {
+
+		if (rawData.length < StatRequestMsgStruct.headerSize) {
+			// the msg is not in the required size
 			return;
 		}
-		
+
 		StatRequestMsgParams params = new StatRequestMsgParams();
 		StatRequestMsgStruct struct = new StatRequestMsgStruct(rawData.length - StatRequestMsgStruct.headerSize);
-		
-		struct.setByteBuffer(ByteBuffer.wrap(rawData),0);
-		
+
+		struct.setByteBuffer(ByteBuffer.wrap(rawData), 0);
+
 		params.numOfHops = (byte) struct.numOfHops.get();
 		params.seqNum = (short) struct.seqNum.get();
-		
-		for(int i = 0; i < struct.path.length; ++i){
+
+		for (int i = 0; i < struct.path.length; ++i) {
 			params.path[i] = struct.path[i].get();
 		}
+
+		params.dstMac = header.getDstAddr().toString();
+		params.srcMac = header.getSrcAddr().toString();
 	}
-	
-	private void parseStatResponseMsg(byte[] rawData) {
+
+	protected class StatRequestQueueObj implements QueueObject {
+		private StatRequestMsgParams param;
+
+		public StatRequestQueueObj(StatRequestMsgParams params) {
+			param = params;
+		}
+
+		@Override
+		public void dispatch() {
+			Controller.getInstance().receiveStatRequestMsgParams(param);
+		}
+	}
+
+	private void parseStatResponseMsg(byte[] rawData, EthernetHeader header) {
 		StatResponeMsgParams params = new StatResponeMsgParams();
 		StatResponeMsgStruct struct = new StatResponeMsgStruct();
-		
-		struct.setByteBuffer(ByteBuffer.wrap(rawData),0);
-		
+
+		struct.setByteBuffer(ByteBuffer.wrap(rawData), 0);
+
 		params.controlMsg = (short) struct.controlMsg.get();
 		params.dataMsg = (short) struct.dataMsg.get();
 		params.numOfError = (short) struct.numOfError.get();
 		params.pathLengh = (byte) struct.pathLengh.get();
 		params.routingTableSize = (byte) struct.routingTableSize.get();
 		params.totalMsgSent = (short) struct.totalMsgSent.get();
+
+		params.dstMac = header.getDstAddr().toString();
+		params.srcMac = header.getSrcAddr().toString();
 	}
-	
+
+	protected class StatResponseQueueObj implements QueueObject {
+		private StatResponeMsgParams param;
+
+		public StatResponseQueueObj(StatResponeMsgParams params) {
+			param = params;
+		}
+
+		@Override
+		public void dispatch() {
+			Controller.getInstance().receiveStatResponeMsgParams(param);
+		}
+	}
+
 	private void parseMonitorMsg(byte[] rawData, EthernetHeader header) {
 		MonitorMsgParams params = new MonitorMsgParams();
 		MonitorMsgStruct struct = new MonitorMsgStruct();
-		
-		struct.setByteBuffer(ByteBuffer.wrap(rawData),0);
-		
+
+		struct.setByteBuffer(ByteBuffer.wrap(rawData), 0);
+
 		params.hour = (byte) struct.hour.get();
 		params.minute = (byte) struct.minute.get();
 		params.second = (byte) struct.second.get();
 		params.routingProtocol = (byte) struct.routingProtocol.get();
 		params.seqNum = (short) struct.seqNum.get();
-		
+
 		params.dstMac = header.getDstAddr().toString();
-		params.srcMac =  header.getSrcAddr().toString();
-		
+		params.srcMac = header.getSrcAddr().toString();
+
 		dispatcher.insert(new MonitorMsgQueueObj(params));
 	}
-	
-	protected class MonitorMsgQueueObj implements QueueObject{
+
+	protected class MonitorMsgQueueObj implements QueueObject {
 		private MonitorMsgParams param;
-		
-		public MonitorMsgQueueObj(MonitorMsgParams params){
+
+		public MonitorMsgQueueObj(MonitorMsgParams params) {
 			param = params;
 		}
-		
+
 		@Override
 		public void dispatch() {
 			Controller.getInstance().receivedMonitorMsgEvent(param);
 		}
 	}
+
 	private void parseElectionMsg(byte[] rawData) {
 		ElectionMsgParams params = new ElectionMsgParams();
 		ElectionMsgStruct struct = new ElectionMsgStruct();
-		
-		struct.setByteBuffer(ByteBuffer.wrap(rawData),0);
-		
+
+		struct.setByteBuffer(ByteBuffer.wrap(rawData), 0);
+
 		params.electionNum = (byte) struct.electionNum.get();
 		params.ip = struct.ip.get();
 		params.seqNum = (short) struct.seqNum.get();
-		
+
 	}
 }

@@ -1,5 +1,8 @@
 package il.ac.shenkar.controller;
 
+import il.ac.shenkar.Monitor.Monitor;
+import il.ac.shenkar.Monitor.MonitorRequestMessage;
+import il.ac.shenkar.Monitor.MonitorResponseMessage;
 import il.ac.shenkar.data.DNSTable;
 import il.ac.shenkar.data.IpTuple;
 import il.ac.shenkar.message.Message.ClientConfAckStruct;
@@ -12,6 +15,8 @@ import il.ac.shenkar.message.ParserCommandInterface.ConfMsgParams;
 import il.ac.shenkar.message.ParserCommandInterface.MonitorMsgParams;
 import il.ac.shenkar.message.ParserCommandInterface.NetworkDiscoveryMsgParams;
 import il.ac.shenkar.message.ParserCommandInterface.NewJoineeMsgParams;
+import il.ac.shenkar.message.ParserCommandInterface.StatRequestMsgParams;
+import il.ac.shenkar.message.ParserCommandInterface.StatResponeMsgParams;
 import il.ac.shenkar.routing.RoutingProtocolEnum;
 import il.ac.shenkar.system.Assembler;
 import il.ac.shenkar.system.managers.IpManager;
@@ -151,6 +156,49 @@ public class Controller {
 		
 			
 		
+	}
+	
+	/*added my Sagi Maday*/
+	
+	public void receiveStatRequestMsgParams(StatRequestMsgParams param){
+		int tempNumOfHops = param.numOfHops & 0xff;
+		String pathAsString = "";
+		for(String s : param.path)
+		{
+			pathAsString+=s;
+		}
+		if(param.numOfHops == 0)
+		{
+			MonitorResponseMessage monitorResponseMessage = Monitor.getInstance()
+					.StartMonitorResponse(pathAsString, param.path.length);
+		}
+		else
+		{
+			MonitorRequestMessage monitorRequestMessage = Monitor.getInstance()
+					.UpdateMonitorRequest(pathAsString, param.path.length
+							, String.valueOf(param.seqNum), tempNumOfHops);
+		}
+	}
+	
+	//TO-DO: add "String path" to the message structure, Optional: add "int pathLength" and numOfHops
+	public void receiveStatResponeMsgParams(StatResponeMsgParams param){
+		/*need to add reverse path to StatResponeMsgParams structure*/
+		String[] reversePath = {"I","love","Manchester","United"};
+		String pathAsString = "";
+		for(String s : /*param.*/reversePath)
+		{
+			pathAsString+=s;
+		}
+		if(/*param.*/reversePath[0] == IpManager.getInstance().getIp())
+		{
+			Monitor.getInstance().DecideProtocolByStatistics(/*give all statistics values*/);
+		}
+		else
+		{
+			MonitorResponseMessage monitorResponseMessage = Monitor.getInstance().UpdateMonitorResponse(pathAsString, /*param.*/reversePath.length
+					,param.numOfError, param.totalMsgSent, param.dataMsg
+					,param.controlMsg, param.pathLengh, param.routingTableSize);
+		}
 	}
 
 }

@@ -66,12 +66,16 @@ public interface ParserCommandInterface {
 	}
 	
 	public class StatRequestMsgParams{
+		public String dstMac;
+		public String srcMac;
 		public short seqNum;
 		public byte numOfHops;
 		public String[] path;
 	}
 	
 	public class StatResponeMsgParams{
+		public String dstMac;
+		public String srcMac;
 		public short totalMsgSent;
 		public short numOfError;
 		public short dataMsg;
